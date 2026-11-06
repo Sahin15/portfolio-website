@@ -1,0 +1,139 @@
+/* Fonts are loaded via <link> tags in index.html (preconnect + display=swap). */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: #030712;
+    --color-text: #f8fafc;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  body {
+    margin: 0;
+    overflow-x: hidden;
+    max-width: 100%;
+    font-family: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Headings share the Manrope family used across the portfolio. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: inherit;
+  }
+
+  a,
+  button,
+  input,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input,
+  textarea {
+    color-scheme: dark;
+  }
+
+  ::selection {
+    background: rgba(103, 232, 249, 0.22);
+    color: #f8fafc;
+  }
+
+  /*
+   * Refined, consistent keyboard focus indicator for the dark theme.
+   * Applies to every interactive element that does not define its own
+   * focus-visible ring (those use `focus:outline-none focus-visible:ring-*`).
+   * Mouse/touch clicks do not trigger it thanks to :focus-visible.
+   */
+  :focus-visible {
+    outline: 2px solid rgba(147, 197, 253, 0.9);
+    outline-offset: 3px;
+  }
+
+  input,
+  textarea {
+    /* Keep focused form fields clear of the sticky header */
+    scroll-margin-top: 7rem;
+  }
+}
+
+@layer components {
+  .grid-pattern {
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent);
+  }
+
+  .noise {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cg fill='%23ffffff' fill-opacity='0.9'%3E%3Ccircle cx='18' cy='22' r='1'/%3E%3Ccircle cx='72' cy='44' r='1'/%3E%3Ccircle cx='126' cy='24' r='1'/%3E%3Ccircle cx='156' cy='72' r='1'/%3E%3Ccircle cx='42' cy='124' r='1'/%3E%3Ccircle cx='98' cy='148' r='1'/%3E%3Ccircle cx='146' cy='162' r='1'/%3E%3Ccircle cx='78' cy='92' r='1'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.82);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(103, 232, 249, 0.65), rgba(129, 140, 248, 0.65));
+}
+
+
+/* ------------------------------------------------------------------
+   Performance: mobile & reduced-motion refinements
+   ------------------------------------------------------------------ */
+
+/*
+ * On small screens, the many stacked glass cards inside <main> each apply a
+ * backdrop-filter, which is expensive to composite while scrolling on mobile
+ * GPUs. The cards already use semi-opaque dark backgrounds, so dropping the
+ * blur there is visually near-identical while keeping scrolling smooth.
+ * The header and modal overlays (which genuinely sit above content) keep it.
+ */
+@media (max-width: 767px) {
+  main [class*='backdrop-blur']:not(.fixed) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

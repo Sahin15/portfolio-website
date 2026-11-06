@@ -1,0 +1,21 @@
+# ============================================================================
+# SERVER-SIDE SECRETS FOR CLOUDFLARE PAGES FUNCTION (`/api/contact`)
+# Copy this file to `frontend/.dev.vars` for local testing.
+# In production, configure these in:
+# Cloudflare Dashboard -> Workers & Pages -> <Project> -> Settings -> Variables and Secrets
+# ============================================================================
+
+# [SECRET] Resend HTTP Email API Key (https://resend.com — Free tier: 3,000 emails/month)
+RESEND_API_KEY=re_your_api_key_here
+
+# [TEXT] Recipient email address where portfolio inquiries are delivered
+CONTACT_TO_EMAIL=sahinmondal7@gmail.com
+
+# [TEXT] Verified sender address in Resend
+# Use "Portfolio Contact <onboarding@resend.dev>" while testing on Resend's free sandbox,
+# or "Portfolio Contact <contact@sahinmondal.com>" once your domain is verified in Resend.
+CONTACT_FROM_EMAIL=Portfolio Contact <onboarding@resend.dev>
+
+# [TEXT - Optional] Restrict POST /api/contact to your production domain origin
+# ALLOWED_ORIGIN=https://sahinmondal.com
+

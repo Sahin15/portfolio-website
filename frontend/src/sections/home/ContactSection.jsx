@@ -169,7 +169,7 @@ function ContactSection() {
     }
   };
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = (event) => {
     event.preventDefault();
 
     // Prevent duplicate submissions while a request is in flight
@@ -177,7 +177,7 @@ function ContactSection() {
       return;
     }
 
-    // Client-side honeypot guard (paired with backend honeypot check in /api/contact)
+    // Client-side honeypot guard
     if (String(formData.website ?? '').trim().length > 0) {
       setStatus({
         type: 'error',
@@ -202,73 +202,68 @@ function ContactSection() {
 
     isSubmittingRef.current = true;
     setFieldErrors({});
-    setStatus({ type: 'loading', message: '' });
 
-    const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
-    const endpoint = `${apiBaseUrl}/api/contact`;
-    // Never leave the visitor waiting on an unreachable API: abort after 15s
-    // and fall through to the honest error state with the direct email fallback.
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+    const whatsappText = [
+      'Hi Sahin,',
+      '',
+      `Name: ${cleanName}`,
+      `Email: ${cleanEmail}`,
+      '',
+      'Message:',
+      cleanMessage,
+    ].join('\n');
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          name: cleanName,
-          email: cleanEmail,
-          message: cleanMessage,
-          website: formData.website,
-        }),
-      });
+    const whatsappUrl = `https://wa.me/${contactContent.whatsappNumber}?text=${encodeURIComponent(whatsappText)}`;
+    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
 
-      let payload = null;
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        payload = await response.json();
-      }
+    setFormData(initialForm);
+    setStatus({
+      type: 'success',
+      message:
+        'WhatsApp opened with your message ready to send. Prefer email? Use the "Send via Email" button or email sahinmondal7@gmail.com directly.',
+    });
+    isSubmittingRef.current = false;
+  };
 
-      if (!response.ok || !payload || payload.success !== true) {
-        if (payload?.fieldErrors && Object.keys(payload.fieldErrors).length > 0) {
-          setFieldErrors(payload.fieldErrors);
-          setStatus({ type: 'idle', message: '' });
-          focusFirstInvalidField(payload.fieldErrors);
-          return;
-        }
-
-        setStatus({
-          type: 'error',
-          message:
-            response.status === 429 && payload?.error
-              ? payload.error
-              : 'Unable to send your message right now. Please try again or contact me directly via email.',
-        });
-        return;
-      }
-
-      setFormData(initialForm);
-      setFieldErrors({});
-      setStatus({
-        type: 'success',
-        message:
-          payload.message ||
-          'Thanks for reaching out. Your message has been sent successfully.',
-      });
-    } catch {
-      setStatus({
-        type: 'error',
-        message:
-          'Unable to send your message right now. Please try again or contact me directly via email.',
-      });
-    } finally {
-      window.clearTimeout(timeoutId);
-      isSubmittingRef.current = false;
+  const handleSendViaEmail = () => {
+    // Honeypot guard
+    if (String(formData.website ?? '').trim().length > 0) {
+      return;
     }
+
+    const cleanName = formData.name.replace(/\s+/g, ' ').trim();
+    const cleanEmail = formData.email.trim();
+    const cleanMessage = formData.message.trim();
+
+    // If the visitor hasn't typed anything yet, redirect straight to mailto:
+    if (!cleanName && !cleanEmail && !cleanMessage) {
+      window.location.href = `mailto:${contactContent.email}`;
+      return;
+    }
+
+    const nextErrors = validateAllFields(formData);
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      setStatus({ type: 'idle', message: '' });
+      focusFirstInvalidField(nextErrors);
+      return;
+    }
+
+    setFieldErrors({});
+    const subject = `Portfolio Contact from ${cleanName}`;
+    const body = [
+      `Name: ${cleanName}`,
+      `Email: ${cleanEmail}`,
+      '',
+      'Message:',
+      cleanMessage,
+    ].join('\n');
+
+    window.location.href = `mailto:${contactContent.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setStatus({
+      type: 'success',
+      message: `Opening your email client addressed to ${contactContent.email}.`,
+    });
   };
 
   return (
@@ -581,23 +576,33 @@ function ContactSection() {
                       ) : null}
                     </div>
 
-                    {/* aria-disabled (not disabled) keeps keyboard focus on the button while sending;
-                        duplicate submissions are blocked in handleSubmit. */}
-                    <button
-                      type="submit"
-                      aria-disabled={isLoading}
-                      className="group inline-flex min-h-[48px] w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_14px_34px_-6px_rgba(79,70,229,0.5)] transition-all hover:from-blue-400 hover:via-indigo-500 hover:to-purple-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 aria-disabled:cursor-wait aria-disabled:opacity-70"
-                    >
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                      ) : (
-                        <Send
-                          className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5"
-                          aria-hidden="true"
-                        />
-                      )}
-                      <span>{isLoading ? 'Sending...' : 'Send Message'}</span>
-                    </button>
+                    {/* Primary WhatsApp Submit + Secondary Direct Email Redirect */}
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <button
+                        type="submit"
+                        aria-disabled={isLoading}
+                        className="group inline-flex min-h-[48px] flex-1 items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_14px_34px_-6px_rgba(79,70,229,0.5)] transition-all hover:from-blue-400 hover:via-indigo-500 hover:to-purple-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 aria-disabled:cursor-wait aria-disabled:opacity-70"
+                      >
+                        {isLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        ) : (
+                          <Send
+                            className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5"
+                            aria-hidden="true"
+                          />
+                        )}
+                        <span>{isLoading ? 'Opening...' : 'Send via WhatsApp'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSendViaEmail}
+                        className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border border-white/14 bg-white/[0.05] px-5 py-3.5 font-sans text-sm font-semibold text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md transition-all hover:border-blue-400/35 hover:bg-white/[0.1] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                      >
+                        <Mail className="h-4 w-4 text-blue-300" aria-hidden="true" />
+                        <span>Send via Email</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div

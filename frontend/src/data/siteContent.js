@@ -1998,6 +1998,7 @@ export const contactContent = {
   description:
     'I’m always open to discussing software engineering opportunities, interesting products and meaningful technical challenges. If you think my experience could be a good fit for your team, I’d be happy to connect.',
   email: 'sahinmondal7@gmail.com',
+  whatsappNumber: '918768916367',
   methods: [
     {
       id: 'email',

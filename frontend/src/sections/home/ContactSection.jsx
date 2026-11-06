@@ -177,16 +177,6 @@ function ContactSection() {
       return;
     }
 
-    // Client-side honeypot guard
-    if (String(formData.website ?? '').trim().length > 0) {
-      setStatus({
-        type: 'error',
-        message:
-          'Unable to send your message right now. Please try again or contact me directly via email.',
-      });
-      return;
-    }
-
     const nextErrors = validateAllFields(formData);
 
     if (Object.keys(nextErrors).length > 0) {
@@ -214,7 +204,10 @@ function ContactSection() {
     ].join('\n');
 
     const whatsappUrl = `https://wa.me/${contactContent.whatsappNumber}?text=${encodeURIComponent(whatsappText)}`;
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    const popup = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    if (!popup) {
+      window.location.href = whatsappUrl;
+    }
 
     setFormData(initialForm);
     setStatus({
@@ -226,11 +219,6 @@ function ContactSection() {
   };
 
   const handleSendViaEmail = () => {
-    // Honeypot guard
-    if (String(formData.website ?? '').trim().length > 0) {
-      return;
-    }
-
     const cleanName = formData.name.replace(/\s+/g, ' ').trim();
     const cleanEmail = formData.email.trim();
     const cleanMessage = formData.message.trim();
@@ -452,7 +440,8 @@ function ContactSection() {
                       value={formData.website}
                       onChange={handleChange}
                       tabIndex={-1}
-                      autoComplete="off"
+                      readOnly
+                      autoComplete="new-password"
                     />
                   </div>
 
